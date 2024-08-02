@@ -2,38 +2,25 @@ _base_ = ['../_base_/default_runtime.py', '../_base_/det_p5_tta.py']
 
 # ========================Frequently modified parameters======================
 # -----data related-----
-data_root = 'data/coco/'  # Root path of data
+data_root = 'data/rip/rip_gd/'  # Root path of data
 # Path of train annotation file
-train_ann_file = 'annotations/instances_train2017.json'
-train_data_prefix = 'train2017/'  # Prefix of train image path
+train_ann_file = 'annotations/trainval.json'
+train_data_prefix = 'images/'  # Prefix of train image path
 # Path of val annotation file
-val_ann_file = 'annotations/instances_val2017.json'
-val_data_prefix = 'val2017/'  # Prefix of val image path
+val_ann_file = 'annotations/trainval.json'
+val_data_prefix = 'images/'  # Prefix of val image path
 
-num_classes = 80  # Number of classes for classification
+num_classes = 1  # Number of classes for classification
 # Batch size of a single GPU during training
-train_batch_size_per_gpu = 16
+class_name = ('with_rips', )
+metainfo = dict(classes=('with_rips', ), palette=[(220, 20, 60)])
+classes=('with_rips', )
+
+train_batch_size_per_gpu = 8
 # Worker to pre-fetch data for each single GPU during training
-train_num_workers = 8
+train_num_workers = 2
 # persistent_workers must be False if num_workers is 0
 persistent_workers = True
-
-# -------------
-
-data_root = 'E:/Data/Research/Rip/video'  # 数据集根路径
-classes = ('with_rips', )
-num_classes = len(classes)  # 数据集类别数
-# metainfo 必须要传给后面的 dataloader 配置，否则无效
-# palette 是可视化时候对应类别的显示颜色
-# palette 长度必须大于或等于 classes 长度
-metainfo = dict(classes=classes, palette=[(20, 220, 60)])
-data_prefix = dict(img=data_root+'/images/')
-train_ann_file = data_root+'/annotations/trainval.json'
-test_ann_file = data_root+'/annotations/test.json'
-img_scale = (1280, 1280)  # width, height
-num_classes = 1  # Number of classes for classification
-# Config of batch shapes. Only on val.
-
 
 # -----model related-----
 # Basic size of multi-scale prior box
@@ -46,7 +33,7 @@ anchors = [
 # -----train val related-----
 # Base learning rate for optim_wrapper. Corresponding to 8xb16=128 bs
 base_lr = 0.01
-max_epochs = 300  # Maximum training epochs
+max_epochs = 200  # Maximum training epochs
 
 model_test_cfg = dict(
     # The config of multi-label for multi-class prediction.
@@ -175,7 +162,7 @@ albu_train_transforms = [
 ]
 
 pre_transform = [
-    dict(type='LoadImageFromFile', backend_args=_base_.backend_args),
+    dict(type='LoadImageFromFile', file_client_args=_base_.file_client_args),
     dict(type='LoadAnnotations', with_bbox=True)
 ]
 
@@ -228,7 +215,7 @@ train_dataloader = dict(
         pipeline=train_pipeline))
 
 test_pipeline = [
-    dict(type='LoadImageFromFile', backend_args=_base_.backend_args),
+    dict(type='LoadImageFromFile', file_client_args=_base_.file_client_args),
     dict(type='YOLOv5KeepRatioResize', scale=img_scale),
     dict(
         type='LetterResize',
@@ -307,3 +294,11 @@ train_cfg = dict(
     val_interval=save_checkpoint_intervals)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
+
+visualizer = dict(
+    type='mmdet.DetLocalVisualizer',
+    vis_backends=[dict(type='LocalVisBackend'),
+                #   dict(type='WandbVisBackend',init_kwargs=dict(name="YoloV5_S_Rip-"+str(random.randint(1000,9999)),project='rip-currents'))],
+                  dict(type='WandbVisBackend',init_kwargs=dict(name="YoloV5_S_Rip",project='rip-currents'))],
+    name='visualizer')
+
